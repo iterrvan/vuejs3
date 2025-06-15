@@ -1,0 +1,106 @@
+Pasos para conectar con Laravel 12 API RESTful:
+1. Configuración del Backend Laravel
+En tu proyecto Laravel, configura estos endpoints en routes/api.php:
+
+<?php
+// routes/api.php
+// Autenticación
+Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/auth/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
+// Productos (público)
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
+// Carrito y pedidos (requiere autenticación)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+});
+// Admin (requiere role admin)
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::apiResource('products', AdminProductController::class);
+    Route::get('/orders', [AdminOrderController::class, 'index']);
+    Route::get('/users', [AdminUserController::class, 'index']);
+});
+2. Configurar CORS en Laravel
+En config/cors.php:
+
+<?php
+return [
+    'paths' => ['api/*'],
+    'allowed_methods' => ['*'],
+    'allowed_origins' => ['*'], // En producción especifica tu dominio
+    'allowed_origins_patterns' => [],
+    'allowed_headers' => ['*'],
+    'exposed_headers' => [],
+    'max_age' => 0,
+    'supports_credentials' => true,
+];
+3. Instalar Laravel Sanctum
+composer require laravel/sanctum
+php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
+php artisan migrate
+4. Estructura de respuestas JSON esperadas
+Productos (GET /api/products):
+
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Producto 1",
+      "price": 29.99,
+      "description": "Descripción del producto",
+      "image": "url_imagen",
+      "category": "electronics",
+      "stock": 10
+    }
+  ]
+}
+Login (POST /api/auth/login):
+
+{
+  "token": "bearer_token_here",
+  "user": {
+    "id": 1,
+    "name": "Usuario",
+    "email": "user@example.com",
+    "role": "customer"
+  }
+}
+5. Variables de entorno
+Actualiza la URL de la API en src/composables/useStore.js:
+
+Desarrollo: http://localhost:8000/api
+Producción: https://tu-api-laravel.com/api
+6. Configurar autenticación con tokens
+El sistema ya está preparado para usar tokens Bearer. Laravel Sanctum los generará automáticamente.
+
+7. Estructura de controllers Laravel recomendada
+// app/Http/Controllers/API/AuthController.php
+class AuthController extends Controller
+{
+    public function login(Request $request)
+    {
+        // Validar y autenticar
+        $token = $user->createToken('auth_token')->plainTextToken;
+        
+        return response()->json([
+            'token' => $token,
+            'user' => $user
+        ]);
+    }
+}
+8. Middleware para roles
+Crea middleware para verificar roles de admin:
+
+// app/Http/Middleware/CheckRole.php
+public function handle($request, Closure $next, $role)
+{
+    if (!$request->user() || $request->user()->role !== $role) {
+        return response()->json(['error' => 'Unauthorized'], 403);
+    }
+    return $next($request);
+}
+El frontend Vue ya está completamente preparado para conectarse con tu API Laravel. Solo necesitas ajustar la URL base y implementar los endpoints correspondientes en Laravel.
