@@ -17,8 +17,8 @@ const categories = ref([])
 const orders = ref([])
 
 // === CONFIGURACIÓN DE API ===
-// Cambia esta URL por tu API backend
-const API_BASE_URL = 'http://localhost:3000/api' // CAMBIAR POR TU API
+// URL de tu API Laravel - CAMBIAR POR TU DOMINIO
+const API_BASE_URL = 'http://localhost:8000/api' // Laravel API URL
 
 // === FUNCIONES DE UTILIDAD ===
 const makeRequest = async (endpoint, options = {}) => {
